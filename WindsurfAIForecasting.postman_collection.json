@@ -1,0 +1,227 @@
+{
+  "info": {
+    "_postman_id": "b5e7f3d2-8a1c-4e5d-9f8a-c4e6d2f3a1b5",
+    "name": "Windsurf AI Forecasting",
+    "description": "Collection for testing the Windsurf AI Forecasting microservice endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/health",
+          "host": ["{{baseUrl}}"],
+          "path": ["health"]
+        },
+        "description": "Check if the service is running properly"
+      },
+      "response": []
+    },
+    {
+      "name": "Text-Based Forecast",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"inputText\": \"Product X has been selling at an average of 50 units per day for the past week. The week before that, it was selling at 45 units per day. We need to forecast for the next two weeks.\",\n    \"jobId\": \"{{jobId}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/forecast/text",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "forecast", "text"]
+        },
+        "description": "Generate a forecast based on text description"
+      },
+      "response": []
+    },
+    {
+      "name": "CSV Upload Forecast (PDF Response)",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "file",
+              "type": "file",
+              "src": "/path/to/your/inventory.csv",
+              "description": "CSV file with inventory data"
+            },
+            {
+              "key": "jobId",
+              "value": "{{jobId}}",
+              "type": "text",
+              "description": "Optional job ID for tracking"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/forecast/csv",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "forecast", "csv"]
+        },
+        "description": "Upload a CSV file for forecasting and receive a PDF report in response"
+      },
+      "response": [
+        {
+          "name": "PDF Response",
+          "originalRequest": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "/path/to/your/inventory.csv"
+                },
+                {
+                  "key": "jobId",
+                  "value": "{{jobId}}",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/forecast/csv",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "forecast", "csv"]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "pdf",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/pdf"
+            },
+            {
+              "key": "Content-Disposition",
+              "value": "attachment; filename=\"forecast-1626912345678.pdf\""
+            }
+          ],
+          "body": "[Binary PDF Content]"
+        }
+      ]
+    },
+    {
+      "name": "Inventory Data Forecast",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"inventoryData\": [\n        {\n            \"name\": \"Laptop Dell XPS 13\",\n            \"sku\": \"DELL-XPS-001\",\n            \"tagId\": \"TAG001\",\n            \"description\": \"High-performance laptop for professionals\",\n            \"category\": \"Electronics\",\n            \"quantity\": 25,\n            \"threshold\": 5,\n            \"warehouseId\": \"WH001\",\n            \"zoneId\": \"ZONE-A\",\n            \"shelfId\": \"SHELF-01\",\n            \"binId\": \"BIN-A1\",\n            \"status\": \"Available\",\n            \"inventoryStatus\": \"sale\",\n            \"costPrice\": 899.99,\n            \"retailPrice\": 1299.99\n        },\n        {\n            \"name\": \"iPhone 14 Pro\",\n            \"sku\": \"APPLE-IPHONE-001\",\n            \"tagId\": \"TAG002\",\n            \"description\": \"Latest iPhone with advanced camera system\",\n            \"category\": \"Electronics\",\n            \"quantity\": 15,\n            \"threshold\": 3,\n            \"warehouseId\": \"WH001\",\n            \"zoneId\": \"ZONE-A\",\n            \"shelfId\": \"SHELF-01\",\n            \"binId\": \"BIN-A2\",\n            \"status\": \"Available\",\n            \"inventoryStatus\": \"sale\",\n            \"costPrice\": 799.99,\n            \"retailPrice\": 1099.99\n        },\n        {\n            \"name\": \"Wireless Mouse\",\n            \"sku\": \"LOGITECH-MOUSE-001\",\n            \"tagId\": \"TAG003\",\n            \"description\": \"Ergonomic wireless mouse\",\n            \"category\": \"Accessories\",\n            \"quantity\": 50,\n            \"threshold\": 10,\n            \"warehouseId\": \"WH001\",\n            \"zoneId\": \"ZONE-B\",\n            \"shelfId\": \"SHELF-02\",\n            \"binId\": \"BIN-B1\",\n            \"status\": \"Available\",\n            \"inventoryStatus\": \"sale\",\n            \"costPrice\": 19.99,\n            \"retailPrice\": 29.99\n        },\n        {\n            \"name\": \"Mechanical Keyboard\",\n            \"sku\": \"RAZER-KB-001\",\n            \"tagId\": \"TAG004\",\n            \"description\": \"Gaming mechanical keyboard with RGB\",\n            \"category\": \"Accessories\",\n            \"quantity\": 30,\n            \"threshold\": 5,\n            \"warehouseId\": \"WH001\",\n            \"zoneId\": \"ZONE-B\",\n            \"shelfId\": \"SHELF-02\",\n            \"binId\": \"BIN-B2\",\n            \"status\": \"Available\",\n            \"inventoryStatus\": \"sale\",\n            \"costPrice\": 89.99,\n            \"retailPrice\": 129.99\n        },\n        {\n            \"name\": \"Monitor 27\\\" 4K\",\n            \"sku\": \"SAMSUNG-MON-001\",\n            \"tagId\": \"TAG005\",\n            \"description\": \"Ultra HD monitor for professional use\",\n            \"category\": \"Electronics\",\n            \"quantity\": 10,\n            \"threshold\": 2,\n            \"warehouseId\": \"WH001\",\n            \"zoneId\": \"ZONE-A\",\n            \"shelfId\": \"SHELF-03\",\n            \"binId\": \"BIN-A3\",\n            \"status\": \"Available\",\n            \"inventoryStatus\": \"sale\",\n            \"costPrice\": 299.99,\n            \"retailPrice\": 399.99\n        },\n        {\n            \"name\": \"USB-C Cable\",\n            \"sku\": \"ANKER-CABLE-001\",\n            \"tagId\": \"TAG006\",\n            \"description\": \"High-speed USB-C charging cable\",\n            \"category\": \"Accessories\",\n            \"quantity\": 100,\n            \"threshold\": 20,\n            \"warehouseId\": \"WH001\",\n            \"zoneId\": \"ZONE-C\",\n            \"shelfId\": \"SHELF-03\",\n            \"binId\": \"BIN-C1\",\n            \"status\": \"Available\",\n            \"inventoryStatus\": \"sale\",\n            \"costPrice\": 9.99,\n            \"retailPrice\": 14.99\n        },\n        {\n            \"name\": \"Bluetooth Headphones\",\n            \"sku\": \"SONY-HEAD-001\",\n            \"tagId\": \"TAG007\",\n            \"description\": \"Noise-cancelling wireless headphones\",\n            \"category\": \"Electronics\",\n            \"quantity\": 20,\n            \"threshold\": 5,\n            \"warehouseId\": \"WH001\",\n            \"zoneId\": \"ZONE-A\",\n            \"shelfId\": \"SHELF-04\",\n            \"binId\": \"BIN-A4\",\n            \"status\": \"Available\",\n            \"inventoryStatus\": \"sale\",\n            \"costPrice\": 149.99,\n            \"retailPrice\": 199.99\n        },\n        {\n            \"name\": \"Tablet Stand\",\n            \"sku\": \"IPAD-STAND-001\",\n            \"tagId\": \"TAG008\",\n            \"description\": \"Adjustable tablet stand for desk use\",\n            \"category\": \"Accessories\",\n            \"quantity\": 40,\n            \"threshold\": 8,\n            \"warehouseId\": \"WH001\",\n            \"zoneId\": \"ZONE-C\",\n            \"shelfId\": \"SHELF-04\",\n            \"binId\": \"BIN-C2\",\n            \"status\": \"Available\",\n            \"inventoryStatus\": \"sale\",\n            \"costPrice\": 24.99,\n            \"retailPrice\": 34.99\n        },\n        {\n            \"name\": \"Webcam HD\",\n            \"sku\": \"LOGITECH-WEB-001\",\n            \"tagId\": \"TAG009\",\n            \"description\": \"1080p webcam for video conferencing\",\n            \"category\": \"Electronics\",\n            \"quantity\": 35,\n            \"threshold\": 7,\n            \"warehouseId\": \"WH001\",\n            \"zoneId\": \"ZONE-B\",\n            \"shelfId\": \"SHELF-05\",\n            \"binId\": \"BIN-B3\",\n            \"status\": \"Available\",\n            \"inventoryStatus\": \"sale\",\n            \"costPrice\": 49.99,\n            \"retailPrice\": 69.99\n        },\n        {\n            \"name\": \"Power Bank 10000mAh\",\n            \"sku\": \"ANKER-PB-001\",\n            \"tagId\": \"TAG010\",\n            \"description\": \"Portable charger for mobile devices\",\n            \"category\": \"Accessories\",\n            \"quantity\": 60,\n            \"threshold\": 12,\n            \"warehouseId\": \"WH001\",\n            \"zoneId\": \"ZONE-C\",\n            \"shelfId\": \"SHELF-05\",\n            \"binId\": \"BIN-C3\",\n            \"status\": \"Available\",\n            \"inventoryStatus\": \"sale\",\n            \"costPrice\": 29.99,\n            \"retailPrice\": 39.99\n        }\n    ],\n    \"jobId\": \"{{jobId}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/forecast/inventory",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "forecast", "inventory"]
+        },
+        "description": "Send inventory data in JSON format for comprehensive forecasting analysis. Returns structured forecast data for dashboard integration."
+      },
+      "response": [
+        {
+          "name": "Success Response",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"inventoryData\": [\n        {\n            \"name\": \"Laptop Dell XPS 13\",\n            \"sku\": \"DELL-XPS-001\",\n            \"tagId\": \"TAG001\",\n            \"description\": \"High-performance laptop for professionals\",\n            \"category\": \"Electronics\",\n            \"quantity\": 25,\n            \"threshold\": 5,\n            \"warehouseId\": \"WH001\",\n            \"zoneId\": \"ZONE-A\",\n            \"shelfId\": \"SHELF-01\",\n            \"binId\": \"BIN-A1\",\n            \"status\": \"Available\",\n            \"inventoryStatus\": \"sale\",\n            \"costPrice\": 899.99,\n            \"retailPrice\": 1299.99\n        }\n    ],\n    \"jobId\": \"test-123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/forecast/inventory",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "forecast", "inventory"]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"status\": \"success\",\n  \"message\": \"Forecast generated successfully\",\n  \"timestamp\": \"2024-01-15T10:30:00Z\",\n  \"model\": \"LSTM-Neural-Network-v2.1\",\n  \"confidence\": 0.85,\n  \"data\": {\n    \"salesForecast\": {\n      \"monthly\": {\n        \"2024\": [45000, 42000, 48000, 52000, 58000, 62000, 68000, 72000, 78000, 82000, 88000, 95000],\n        \"2023\": [42000, 38000, 52000, 48000, 54000, 59000, 65000, 61000, 68000, 74000, 78000, 85000]\n      },\n      \"quarterly\": {\n        \"2024\": [135000, 172000, 222000, 265000],\n        \"2023\": [132000, 161000, 194000, 237000]\n      },\n      \"confidence\": 0.85,\n      \"algorithm\": \"LSTM Neural Network\",\n      \"lastUpdated\": \"2024-01-15T10:30:00Z\"\n    },\n    \"inventoryForecast\": {\n      \"monthly\": {\n        \"2024\": [1800, 1750, 1900, 1850, 2000, 2050, 2100, 2150, 2200, 2250, 2300, 2350],\n        \"2023\": [1200, 1150, 1300, 1250, 1400, 1450, 1500, 1550, 1600, 1650, 1700, 1750]\n      },\n      \"quarterly\": {\n        \"2024\": [5450, 6000, 6550, 6900],\n        \"2023\": [3650, 4100, 4650, 5100]\n      },\n      \"stockoutRisk\": 0.12,\n      \"optimalReorderPoints\": [150, 200, 250, 300],\n      \"lastUpdated\": \"2024-01-15T10:30:00Z\"\n    },\n    \"demandForecast\": {\n      \"monthly\": {\n        \"2024\": [1400, 1350, 1500, 1450, 1600, 1650, 1700, 1750, 1800, 1850, 1900, 1950],\n        \"2023\": [850, 800, 950, 900, 1000, 1050, 1100, 1150, 1200, 1250, 1300, 1350]\n      },\n      \"quarterly\": {\n        \"2024\": [4250, 4700, 5250, 5700],\n        \"2023\": [2600, 2950, 3450, 3900]\n      },\n      \"seasonality\": \"high\",\n      \"trendDirection\": \"increasing\",\n      \"lastUpdated\": \"2024-01-15T10:30:00Z\"\n    },\n    \"productForecast\": {\n      \"data\": [\n        {\n          \"id\": \"DELL-XPS-001\",\n          \"name\": \"Laptop Dell XPS 13\",\n          \"category\": \"Electronics\",\n          \"currentSales\": 25,\n          \"forecastedSales\": 32,\n          \"growth\": 18.5,\n          \"price\": 1299.99,\n          \"revenue\": 32499.75,\n          \"confidence\": 0.92,\n          \"trend\": \"increasing\",\n          \"seasonality\": \"low\"\n        }\n      ],\n      \"summary\": {\n        \"totalProducts\": 1,\n        \"averageGrowth\": 18.5,\n        \"totalRevenue\": 32499.75,\n        \"highGrowthProducts\": 1,\n        \"lastUpdated\": \"2024-01-15T10:30:00Z\"\n      }\n    },\n    \"categoryForecast\": {\n      \"labels\": [\"Electronics\"],\n      \"values\": [100],\n      \"trends\": {\n        \"Electronics\": \"increasing\"\n      },\n      \"confidence\": 0.82,\n      \"lastUpdated\": \"2024-01-15T10:30:00Z\"\n    }\n  },\n  \"metadata\": {\n    \"trainingDataPoints\": 12,\n    \"predictionHorizon\": \"12 months\",\n    \"algorithm\": \"LSTM with Attention\",\n    \"accuracy\": 0.87,\n    \"processedItems\": 1\n  },\n  \"forecastCsvUrl\": \"https://res.cloudinary.com/example/raw/upload/forecasts/forecast-123.csv\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Automated Daily Forecast",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"inventoryData\": [\n        {\n            \"productId\": \"SKU1001\",\n            \"productName\": \"Widget A\",\n            \"date\": \"2025-07-01\",\n            \"quantity\": 120,\n            \"salesVelocity\": 12.5,\n            \"confidence\": \"high\"\n        },\n        {\n            \"productId\": \"SKU1001\",\n            \"productName\": \"Widget A\",\n            \"date\": \"2025-07-02\",\n            \"quantity\": 108,\n            \"salesVelocity\": 11.8,\n            \"confidence\": \"high\"\n        },\n        {\n            \"productId\": \"SKU1001\",\n            \"productName\": \"Widget A\",\n            \"date\": \"2025-07-03\",\n            \"quantity\": 95,\n            \"salesVelocity\": 13.2,\n            \"confidence\": \"medium\"\n        },\n        {\n            \"productId\": \"SKU1002\",\n            \"productName\": \"Widget B\",\n            \"date\": \"2025-07-01\",\n            \"quantity\": 85,\n            \"salesVelocity\": 8.3,\n            \"confidence\": \"medium\"\n        },\n        {\n            \"productId\": \"SKU1002\",\n            \"productName\": \"Widget B\",\n            \"date\": \"2025-07-02\",\n            \"quantity\": 77,\n            \"salesVelocity\": 7.9,\n            \"confidence\": \"medium\"\n        },\n        {\n            \"productId\": \"SKU1002\",\n            \"productName\": \"Widget B\",\n            \"date\": \"2025-07-03\",\n            \"quantity\": 68,\n            \"salesVelocity\": 9.1,\n            \"confidence\": \"low\"\n        }\n    ],\n    \"jobId\": \"{{jobId}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/forecast/automated",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "forecast", "automated"]
+        },
+        "description": "Generate an automated forecast based on historical data"
+      },
+      "response": []
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [""]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [""]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "jobId",
+      "value": "",
+      "type": "string",
+      "description": "Optional job ID for tracking forecasts"
+    }
+  ]
+}
