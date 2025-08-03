@@ -1,4 +1,4 @@
-# 🌊 Windsurf AI Forecasting
+# 🌊 AI Forecasting
 
 A microservice built with Express.js that handles inventory forecasting using Groq Cloud AI. It receives inventory data (CSV or text), processes it with LLM prompts, and returns forecasting results in plain text and optionally CSV format.
 
