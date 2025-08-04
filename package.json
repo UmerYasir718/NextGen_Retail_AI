@@ -1,5 +1,5 @@
 {
-  "name": "windsurf-ai-forecasting",
+  "name": "ai-forecasting",
   "version": "1.0.0",
   "description": "Microservice for inventory forecasting using Groq Cloud AI",
   "main": "index.js",

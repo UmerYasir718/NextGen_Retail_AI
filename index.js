@@ -35,7 +35,7 @@ app.listen(PORT, () => {
   console.log(`Windsurf AI Forecasting service running on port ${PORT}`);
 
   // Initialize cron job for automated forecasts
-  scheduleCronJob();
+  // scheduleCronJob();
   console.log("Automated forecast cron job scheduled");
 });
 
