@@ -64,13 +64,12 @@ function formatHistoricalData(product) {
   return `Product: ${product.name}\nHistorical data for the past 20 days:\nDay 1: 20 units\nDay 2: 22 units\nDay 3: 19 units\n...`;
 }
 
-// Schedule the cron job to run daily at midnight
-const scheduleCronJob = () => {
-  cron.schedule("0 0 * * *", runAutomatedForecasts);
-  console.log("Automated forecast cron job scheduled");
-};
+// // Schedule the cron job to run daily at midnight
+//  const scheduleCronJob = () => {
+//   cron.schedule("0 0 * * *", runAutomatedForecasts);
+//   console.log("Automated forecast cron job scheduled");
+// };
 
-module.exports = {
-  scheduleCronJob,
-  runAutomatedForecasts, // Exported for testing or manual triggering
-};
+// module.exports = {
+//   scheduleCronJob,
+// };

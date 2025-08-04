@@ -3,7 +3,6 @@ const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
 const routes = require("./routes");
-const { scheduleCronJob } = require("./cron/forecastCron");
 
 // Initialize Express app
 const app = express();
@@ -27,15 +26,13 @@ app.use("/api", routes);
 
 // Health check endpoint
 app.get("/health", (req, res) => {
-  res.status(200).json({ status: "ok", service: "windsurf-ai-forecasting" });
+  res.status(200).json({ status: "ok", service: "ai-forecasting" });
 });
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`Windsurf AI Forecasting service running on port ${PORT}`);
+  console.log(`AI Forecasting service running on port ${PORT}`);
 
-  // Initialize cron job for automated forecasts
-  // scheduleCronJob();
   console.log("Automated forecast cron job scheduled");
 });
 
