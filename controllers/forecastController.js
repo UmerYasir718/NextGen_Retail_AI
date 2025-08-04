@@ -61,7 +61,7 @@ exports.processCsvForecast = async (req, res) => {
 
           // Generate PDF from forecast data
           const pdfFilePath = `./uploads/forecast-${jobId || Date.now()}.pdf`;
-          await generateForecastPdf(forecast, pdfFilePath);
+          await generateForecastPdf(forecast, pdfFilePath, null);
 
           // Set response headers for PDF download
           res.setHeader("Content-Type", "application/pdf");
@@ -501,15 +501,18 @@ function normalizeForecastCsv(csvString) {
  * Generate a PDF document from forecast data
  * @param {Object} forecast - Forecast data containing forecastText and forecastCsv
  * @param {String} outputPath - Path where PDF should be saved
+ * @param {Array} inventoryData - Optional inventory data for better table formatting
  * @returns {Promise} Promise that resolves when PDF is created
  */
-async function generateForecastPdf(forecast, outputPath) {
+async function generateForecastPdf(forecast, outputPath, inventoryData = null) {
   return new Promise((resolve, reject) => {
     try {
       // Create a new PDF document with unique metadata
       const doc = new PDFDocument({
-        margin: 50,
+        margin: 40, // Reduced margin for more space
         size: "A4",
+        layout:
+          inventoryData && inventoryData.length > 0 ? "landscape" : "portrait", // Landscape for inventory tables
         info: {
           Title: "NextGen Retail Forecast Report",
           Author: "NextGen AI",
@@ -610,8 +613,22 @@ async function generateForecastPdf(forecast, outputPath) {
           }
         );
 
-      // Add CSV data section if available
-      if (forecast.forecastCsv) {
+      // Add inventory table section if inventory data is available
+      if (inventoryData && inventoryData.length > 0) {
+        doc
+          .addPage()
+          .fontSize(18)
+          .fillColor("#003366")
+          .font("Helvetica-Bold")
+          .text("Inventory Data", {
+            underline: false,
+          });
+
+        // Use the new inventory table function
+        createInventoryTable(doc, inventoryData);
+      }
+      // Add CSV data section if available (fallback for other forecast types)
+      else if (forecast.forecastCsv) {
         doc
           .addPage()
           .fontSize(18)
@@ -677,36 +694,60 @@ async function generateForecastPdf(forecast, outputPath) {
             return cells;
           });
 
-          // Calculate column widths based on content
+          // Calculate column widths based on content with better spacing
           let columnWidths = [];
           const tableWidth = doc.page.width - 100;
-          const padding = 10;
+          const padding = 8;
+          const minColumnWidth = 60; // Minimum column width
+          const maxColumnWidth = 120; // Maximum column width
 
           // Initialize with header widths
           headers.forEach((header, i) => {
-            columnWidths[i] = doc.widthOfString(header) + padding;
+            const headerWidth = doc.widthOfString(header) + padding * 2;
+            columnWidths[i] = Math.max(
+              minColumnWidth,
+              Math.min(maxColumnWidth, headerWidth)
+            );
           });
 
-          // Check data widths
+          // Check data widths and set reasonable limits
           rows.forEach((row) => {
             row.forEach((cell, i) => {
               if (i < headers.length) {
-                const cellWidth = doc.widthOfString(String(cell)) + padding;
-                if (cellWidth > columnWidths[i]) {
-                  columnWidths[i] = cellWidth;
+                const cellText = String(cell);
+                const cellWidth = doc.widthOfString(cellText) + padding * 2;
+
+                // Set reasonable limits for each column type
+                let maxWidth = maxColumnWidth;
+                if (i === 0) maxWidth = 150; // Name column can be wider
+                if (i === 1) maxWidth = 80; // SKU column
+                if (i === 2) maxWidth = 100; // Category column
+                if (i === 3 || i === 4) maxWidth = 70; // Quantity/Threshold columns
+                if (i === 5 || i === 6) maxWidth = 90; // Price columns
+                if (i === 7) maxWidth = 80; // Status column
+                if (i === 8) maxWidth = 120; // Location column
+
+                const newWidth = Math.max(
+                  minColumnWidth,
+                  Math.min(maxWidth, cellWidth)
+                );
+                if (newWidth > columnWidths[i]) {
+                  columnWidths[i] = newWidth;
                 }
               }
             });
           });
 
-          // Adjust column widths to fit page
+          // Ensure total width fits the page
           const totalWidth = columnWidths.reduce(
             (sum, width) => sum + width,
             0
           );
           if (totalWidth > tableWidth) {
             const ratio = tableWidth / totalWidth;
-            columnWidths = columnWidths.map((width) => width * ratio);
+            columnWidths = columnWidths.map((width) =>
+              Math.max(minColumnWidth, width * ratio)
+            );
           }
 
           // Start table position
@@ -763,7 +804,7 @@ async function generateForecastPdf(forecast, outputPath) {
           doc.fillColor("#000000").font("Helvetica");
 
           let rowColor = false; // For alternating row colors
-          let maxCellHeight = 20; // Default cell height
+          let maxCellHeight = 25; // Increased default cell height
 
           rows.forEach((row, rowIndex) => {
             // Calculate max height for this row based on content
@@ -772,10 +813,25 @@ async function generateForecastPdf(forecast, outputPath) {
               if (i < headers.length) {
                 const cellText = String(cell);
                 const cellWidth = columnWidths[i] - 10;
-                const textHeight = doc.heightOfString(cellText, {
+
+                // Check if text needs to be truncated
+                let displayText = cellText;
+                const textWidth = doc.widthOfString(cellText);
+                if (textWidth > cellWidth) {
+                  let truncated = cellText;
+                  while (
+                    doc.widthOfString(truncated + "...") > cellWidth &&
+                    truncated.length > 3
+                  ) {
+                    truncated = truncated.slice(0, -1);
+                  }
+                  displayText = truncated + "...";
+                }
+
+                const textHeight = doc.heightOfString(displayText, {
                   width: cellWidth,
                 });
-                rowHeight = Math.max(rowHeight, textHeight + 10); // Add padding
+                rowHeight = Math.max(rowHeight, textHeight + 12); // Increased padding
               }
             });
 
@@ -853,8 +909,25 @@ async function generateForecastPdf(forecast, outputPath) {
                   doc.fillColor("#990000");
                 }
 
+                // Truncate text if it's too long for the column
+                let displayText = cellText;
+                const maxWidth = columnWidths[i] - 10;
+                const textWidth = doc.widthOfString(cellText);
+
+                if (textWidth > maxWidth) {
+                  // Try to truncate intelligently
+                  let truncated = cellText;
+                  while (
+                    doc.widthOfString(truncated + "...") > maxWidth &&
+                    truncated.length > 3
+                  ) {
+                    truncated = truncated.slice(0, -1);
+                  }
+                  displayText = truncated + "...";
+                }
+
                 doc.text(
-                  cellText,
+                  displayText,
                   colX + 5, // Add padding
                   y + 5,
                   { width: columnWidths[i] - 10, align: textAlign } // Subtract padding from width
@@ -1183,4 +1256,269 @@ function generateMonthlyDemand(baseQuantity, months) {
     );
   }
   return demand;
+}
+
+/**
+ * Create a well-formatted inventory table for PDF
+ */
+function createInventoryTable(doc, inventoryData) {
+  if (!inventoryData || inventoryData.length === 0) {
+    return;
+  }
+
+  // Define headers for inventory table
+  const headers = [
+    "Name",
+    "SKU",
+    "Category",
+    "Quantity",
+    "Threshold",
+    "Cost Price",
+    "Retail Price",
+    "Status",
+    "Location",
+  ];
+
+  // Prepare data rows
+  const rows = inventoryData.map((item) => [
+    item.name,
+    item.sku,
+    item.category,
+    item.quantity.toString(),
+    item.threshold.toString(),
+    `$${parseFloat(item.costPrice).toFixed(2)}`,
+    `$${parseFloat(item.retailPrice).toFixed(2)}`,
+    item.status,
+    `${item.warehouseId}/${item.zoneId}/${item.shelfId}/${item.binId}`,
+  ]);
+
+  // Calculate optimal column widths - use more space in landscape mode
+  const tableWidth = doc.page.width - 80; // More space in landscape
+  const padding = 8;
+  const minColumnWidth = 50;
+
+  // Define column width limits based on content type - increased for better readability
+  const columnLimits = [
+    { min: 120, max: 200 }, // Name - wider for product names
+    { min: 70, max: 90 }, // SKU
+    { min: 70, max: 110 }, // Category
+    { min: 60, max: 80 }, // Quantity
+    { min: 60, max: 80 }, // Threshold
+    { min: 70, max: 100 }, // Cost Price
+    { min: 70, max: 100 }, // Retail Price
+    { min: 60, max: 90 }, // Status
+    { min: 100, max: 140 }, // Location
+  ];
+
+  let columnWidths = [];
+
+  // Calculate initial widths based on headers
+  headers.forEach((header, i) => {
+    const headerWidth = doc.widthOfString(header) + padding * 2;
+    columnWidths[i] = Math.max(
+      columnLimits[i].min,
+      Math.min(columnLimits[i].max, headerWidth)
+    );
+  });
+
+  // Adjust based on data content
+  rows.forEach((row) => {
+    row.forEach((cell, i) => {
+      const cellText = String(cell);
+      const cellWidth = doc.widthOfString(cellText) + padding * 2;
+      const newWidth = Math.max(
+        columnLimits[i].min,
+        Math.min(columnLimits[i].max, cellWidth)
+      );
+      if (newWidth > columnWidths[i]) {
+        columnWidths[i] = newWidth;
+      }
+    });
+  });
+
+  // Ensure total width fits the page
+  const totalWidth = columnWidths.reduce((sum, width) => sum + width, 0);
+  if (totalWidth > tableWidth) {
+    const ratio = tableWidth / totalWidth;
+    columnWidths = columnWidths.map((width, i) =>
+      Math.max(columnLimits[i].min, width * ratio)
+    );
+  }
+
+  // Start table position - adjusted for landscape
+  let y = doc.y + 20;
+  let x = 40; // Adjusted for new margins
+
+  // Draw table header
+  doc.save();
+  const gradient = doc.linearGradient(x, y, x + tableWidth, y);
+  gradient.stop(0, "#003366").stop(1, "#0066cc");
+  doc.rect(x, y, tableWidth, 30).fill(gradient);
+
+  doc.lineWidth(1.5).strokeColor("#000033").rect(x, y, tableWidth, 30).stroke();
+
+  // Draw header text
+  doc.fillColor("#FFFFFF").font("Helvetica-Bold").fontSize(9);
+
+  headers.forEach((header, i) => {
+    const colX =
+      x +
+      (i > 0
+        ? columnWidths.slice(0, i).reduce((sum, width) => sum + width, 0)
+        : 0);
+
+    if (i > 0) {
+      doc
+        .strokeColor("#FFFFFF")
+        .moveTo(colX, y)
+        .lineTo(colX, y + 30)
+        .stroke();
+    }
+
+    doc.text(header, colX + 4, y + 8, {
+      width: columnWidths[i] - 8,
+      align: "center",
+    });
+  });
+
+  doc.restore();
+
+  // Draw data rows
+  y += 30;
+  doc.fillColor("#000000").font("Helvetica").fontSize(9); // Match the second table font size
+
+  let rowColor = false;
+  const rowHeight = 25; // Match the second table row height
+
+  rows.forEach((row, rowIndex) => {
+    // Alternate row colors
+    doc.save();
+    if (rowColor) {
+      const rowGradient = doc.linearGradient(x, y, x + tableWidth, y);
+      rowGradient.stop(0, "#F5F5F5").stop(1, "#E8E8E8");
+      doc.rect(x, y, tableWidth, rowHeight).fill(rowGradient);
+    } else {
+      const rowGradient = doc.linearGradient(x, y, x + tableWidth, y);
+      rowGradient.stop(0, "#FFFFFF").stop(1, "#F8F8F8");
+      doc.rect(x, y, tableWidth, rowHeight).fill(rowGradient);
+    }
+    rowColor = !rowColor;
+
+    // Draw row border
+    doc
+      .lineWidth(0.5)
+      .strokeColor("#CCCCCC")
+      .rect(x, y, tableWidth, rowHeight)
+      .stroke();
+
+    // Draw cell content
+    row.forEach((cell, i) => {
+      const colX =
+        x +
+        (i > 0
+          ? columnWidths.slice(0, i).reduce((sum, width) => sum + width, 0)
+          : 0);
+
+      if (i > 0) {
+        doc
+          .strokeColor("#CCCCCC")
+          .moveTo(colX, y)
+          .lineTo(colX, y + rowHeight)
+          .stroke();
+      }
+
+      let cellText = String(cell);
+      const cellWidth = columnWidths[i] - 8;
+      const textWidth = doc.widthOfString(cellText);
+
+      // Handle text overflow more gracefully
+      if (textWidth > cellWidth) {
+        // For very long text, try to show more content
+        let truncated = cellText;
+        const maxAttempts = 20; // Limit truncation attempts
+        let attempts = 0;
+
+        while (
+          doc.widthOfString(truncated + "...") > cellWidth &&
+          truncated.length > 10 && // Keep more text
+          attempts < maxAttempts
+        ) {
+          truncated = truncated.slice(0, -1);
+          attempts++;
+        }
+
+        // If still too long, use a more aggressive truncation
+        if (doc.widthOfString(truncated + "...") > cellWidth) {
+          truncated = cellText.slice(0, Math.floor(cellWidth / 6)); // Approximate character limit
+          while (
+            doc.widthOfString(truncated + "...") > cellWidth &&
+            truncated.length > 5
+          ) {
+            truncated = truncated.slice(0, -1);
+          }
+        }
+
+        cellText = truncated + "...";
+      }
+
+      // Determine alignment
+      let textAlign = "left";
+      if (i === 3 || i === 4) textAlign = "center"; // Quantity/Threshold
+      if (i === 5 || i === 6) textAlign = "right"; // Prices
+      if (i === 7) textAlign = "center"; // Status
+
+      doc.text(cellText, colX + 4, y + 6, {
+        width: cellWidth,
+        align: textAlign,
+      });
+    });
+
+    doc.restore();
+    y += rowHeight;
+
+    // Add new page if needed
+    if (y > doc.page.height - 50 && rowIndex < rows.length - 1) {
+      doc.addPage();
+      y = 50;
+
+      // Redraw header on new page
+      doc.save();
+      const pageGradient = doc.linearGradient(x, y, x + tableWidth, y);
+      pageGradient.stop(0, "#003366").stop(1, "#0066cc");
+      doc.rect(x, y, tableWidth, 30).fill(pageGradient);
+
+      doc
+        .lineWidth(1.5)
+        .strokeColor("#000033")
+        .rect(x, y, tableWidth, 30)
+        .stroke();
+
+      doc.fillColor("#FFFFFF").font("Helvetica-Bold").fontSize(9);
+
+      headers.forEach((header, i) => {
+        const colX =
+          x +
+          (i > 0
+            ? columnWidths.slice(0, i).reduce((sum, width) => sum + width, 0)
+            : 0);
+
+        if (i > 0) {
+          doc
+            .strokeColor("#FFFFFF")
+            .moveTo(colX, y)
+            .lineTo(colX, y + 30)
+            .stroke();
+        }
+
+        doc.text(header, colX + 4, y + 8, {
+          width: columnWidths[i] - 8,
+          align: "center",
+        });
+      });
+
+      doc.restore();
+      y += 30;
+      doc.fillColor("#000000").font("Helvetica").fontSize(9);
+    }
+  });
 }
